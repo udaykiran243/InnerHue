@@ -28,6 +28,7 @@ export default function MoodPage({ params, searchParams }: MoodPageProps) {
   const [currentMoodIndex, setCurrentMoodIndex] = useState(0);
   const [quote, setQuote] = useState<Quote | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Computed values must be safe even if data is empty
   const currentMood = moodData[currentMoodIndex] || moodData[0];

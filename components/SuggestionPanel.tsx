@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { RefreshCw, MessageCircle, Quote as QuoteIcon, Hash, Music } from 'lucide-react';
+import { RefreshCw, MessageCircle, Quote as QuoteIcon, Hash, Music, Wind, Target, Play } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -12,7 +12,6 @@ import { QuoteCard } from '@/components/QuoteCard';
 import { QuoteSkeleton } from '@/components/QuoteSkeleton';
 import { Quote } from '@/data/fallbackQuotes';
 import { useState, useEffect, useRef } from 'react';
-import { MessageCircle, Quote, Hash, Music, Wind, Target, Play } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface SuggestionPanelProps {
@@ -36,6 +35,7 @@ interface SuggestionPanelProps {
   };
   mood: any;
   onRefresh: () => void;
+  isRefreshing?: boolean;
   // New props for dynamic quotes
   quoteData?: Quote | null;
   isQuoteLoading?: boolean;
@@ -46,31 +46,18 @@ export function SuggestionPanel({
   suggestions,
   mood,
   onRefresh,
+  isRefreshing,
   quoteData,
   isQuoteLoading,
   onQuoteRefresh
 }: SuggestionPanelProps) {
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-2xl font-bold text-gray-800">
-          Personalized Insights
-        </h3>
-        <TooltipProvider delayDuration={500}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="px-2 pt-2 pb-[1px] rounded-lg bg-white/70 backdrop-blur shadow-sm hover:shadow-md transition-all">
-                <motion.button
-                  whileHover={{ scale: 1.05, rotate: 180 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={onRefresh}
-                  className="transition-all"
-                >
-                  <RefreshCw className="w-5 text-purple-600" />
-                </motion.button>
-              </div>
-            </TooltipTrigger>
+  const [isPlayerLoaded, setIsPlayerLoaded] = useState(false);
+  const [breathingActive, setBreathingActive] = useState(false);
+  const [breathingStep, setBreathingStep] = useState(0);
+  const [actionCompleted, setActionCompleted] = useState(false);
+
+  const breathingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const breathingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setIsPlayerLoaded(false);
@@ -139,26 +126,32 @@ export function SuggestionPanel({
 
   return (
     <div className="space-y-6">
-      {/* Quote */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="bg-white/80 dark:bg-white/5 backdrop-blur-md rounded-2xl p-6 shadow-lg border border-white/50 dark:border-white/10"
-      >
-        <div className="flex items-start space-x-3">
-          <div className="p-2 rounded-lg bg-pink-100">
-            <Quote className="w-5 h-5 text-pink-600" />
-          </div>
-          <div>
-            <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Inspirational Quote</h4>
-            <blockquote className="text-gray-700 dark:text-gray-300 italic leading-relaxed mb-2">
-              &ldquo;{suggestions.quote}&rdquo;
-            </blockquote>
-            <cite className="text-sm text-gray-500 dark:text-gray-400">— {suggestions.author}</cite>
-          </div>
-        </div>
-      </motion.div>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
+          Personalized Insights
+        </h3>
+        <TooltipProvider delayDuration={500}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="px-2 pt-2 pb-[1px] rounded-lg bg-white/70 backdrop-blur shadow-sm hover:shadow-md transition-all">
+                <motion.button
+                  whileHover={{ scale: 1.05, rotate: 180 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={onRefresh}
+                  className="transition-all"
+                >
+                  <RefreshCw className={`w-5 text-purple-600 ${isRefreshing ? 'animate-spin' : ''}`} />
+                </motion.button>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Refresh suggestions</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+
 
       {/* Quote Section - Dynamic or Static */}
       {onQuoteRefresh ? (
@@ -187,12 +180,16 @@ export function SuggestionPanel({
               <QuoteIcon className="w-5 h-5 text-pink-600" />
             </div>
             <div>
-              <h4 className="font-semibold text-gray-800 mb-2">Inspirational Quote</h4>
-              <blockquote className="text-gray-700 italic leading-relaxed mb-2">
-                "{suggestions.quote}"
+              <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Inspirational Quote</h4>
+              <blockquote className="text-gray-700 dark:text-gray-300 italic leading-relaxed mb-2">
+                &ldquo;{suggestions.quote}&rdquo;
               </blockquote>
-              <cite className="text-sm text-gray-500">— {suggestions.author}</cite>
+              <cite className="text-sm text-gray-500 dark:text-gray-400">— {suggestions.author}</cite>
             </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* Journal Prompt */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -208,10 +205,10 @@ export function SuggestionPanel({
             <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Journal Prompt</h4>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{suggestions.prompt}</p>
           </div>
-        </motion.div>
-      )}
+        </div>
+      </motion.div>
 
-        {/* Breathing Exercise */}
+      {/* Breathing Exercise */}
         {suggestions.breathing && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}

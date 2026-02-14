@@ -17,10 +17,6 @@ import {
 } from 'recharts';
 import { MoodData } from '@/lib/moodData';
 import { motion } from 'framer-motion';
-import React from 'react';
-import { motion } from 'framer-motion';
-import { useState } from 'react';
-import { BarChart3, PieChart, Activity } from 'lucide-react';
 import { useMoodStore } from '@/lib/useMoodStore';
 
 export function MoodChart() {

@@ -143,16 +143,6 @@ export function getCombinedMoods(defaultMoods: Mood[]): Mood[] {
  * Hook for listening to custom mood changes
  */
 export function useCustomMoods(defaultMoods: Mood[] = []) {
-  if (typeof window === 'undefined') {
-    return {
-      allMoods: defaultMoods,
-      customMoods: [],
-      addCustomMood: () => Promise.reject(new Error('Not available on server')),
-      deleteCustomMood: () => false,
-      refreshMoods: () => {}
-    };
-  }
-
   const [customMoods, setCustomMoods] = useState<CustomMood[]>([]);
 
   useEffect(() => {
@@ -190,7 +180,7 @@ export function useCustomMoods(defaultMoods: Mood[] = []) {
   };
 
   return {
-    allMoods: getCombinedMoods(defaultMoods),
+    allMoods: [...defaultMoods, ...customMoods],
     customMoods,
     addCustomMood,
     deleteCustomMood,
